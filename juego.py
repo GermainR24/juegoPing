@@ -35,7 +35,7 @@ PODERES_INFO = {
     'FAST':  {'color': ROJO,   'duracion': 4000,  'target': 'ball'},
     'SLOW':  {'color': AZUL,   'duracion': 3000,  'target': 'ball'},
     'MULTI': {'color': (255,165,0), 'duracion': 8000, 'target': 'game'},
-    'SHIELD':{'color': CYAN,   'duracion': 10000, 'target': 'self'},
+    'SHIELD':{'color': CYAN,   'duracion': 2000, 'target': 'self'},
     'ZIGZAG':{'color': AMARILLO_ULTI, 'duracion': 5000,  'target': 'ball'}
 }
 LISTA_PODERES = list(PODERES_INFO.keys())
@@ -131,7 +131,8 @@ class Paleta:
         # Muro de Steve
         self.muro_rect = None 
         if self.config_ulti['tipo'] == 'BEDROCK':
-            muro_x = 180 if es_izquierda else ANCHO - 180 - 20
+            distancia_al_arco = 30 
+            muro_x = distancia_al_arco if es_izquierda else ANCHO - distancia_al_arco - 20
             self.muro_rect = pygame.Rect(muro_x, ALTO//2 - 100, 20, 200)
 
         # Manejo de Imagen
@@ -162,10 +163,10 @@ class Paleta:
         
         cambio_tamano = False
         if tipo == 'BIG':
-            self.radio = int(self.radio_base * 1.5)
+            self.radio = int(self.radio_base * 2)
             cambio_tamano = True
         elif tipo == 'SMALL':
-            self.radio = int(self.radio_base * 0.7)
+            self.radio = int(self.radio_base * 0.5)
             cambio_tamano = True
         elif tipo == 'SHIELD':
             self.tiene_escudo = True
@@ -279,11 +280,11 @@ class Disco:
 
     def aplicar_efecto(self, tipo):
         if tipo == 'FAST':
-            self.vel_x *= 1.4
-            self.vel_y *= 1.4
+            self.vel_x *= 1.8
+            self.vel_y *= 1.8
         elif tipo == 'SLOW':
-            self.vel_x *= 0.6
-            self.vel_y *= 0.6
+            self.vel_x *= 0.4
+            self.vel_y *= 0.4
         elif tipo == 'GHOST':
             self.fantasma_rebotes = 3
         elif tipo == 'ZIGZAG':
@@ -294,7 +295,7 @@ class Disco:
         self.y += self.vel_y
 
         if pygame.time.get_ticks() < self.fin_zigzag:
-            oscilacion = math.sin(pygame.time.get_ticks() * 0.08) * 15
+            oscilacion = math.sin(pygame.time.get_ticks() * 0.01) * 15
             self.y += oscilacion
 
         rebotado = False
