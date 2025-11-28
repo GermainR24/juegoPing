@@ -41,7 +41,7 @@ PODERES_INFO = {
 LISTA_PODERES = list(PODERES_INFO.keys())
 
 # --- CONFIGURACIÓN DE ULTIMATES (PERSONAJES) ---
-# cd = Cooldown en milisegundos (ej: 15000 = 15 segundos)
+# cd = Cooldown en milisegundos (ej: 25000 = 25 segundos)
 ULTI_DATA = {
     'M. CURIE': {'cd': 20000, 'duracion': 0,    'tipo': 'FISION'},       # Multibola
     'EINSTEIN': {'cd': 25000, 'duracion': 3000, 'tipo': 'RELATIVIDAD'},  # Slow Motion al enemigo
@@ -58,16 +58,26 @@ VELOCIDAD_PALETA_BASE = 9
 
 # --- Cargar Imagen ---
 def cargar_imagen(nombre, escala=None):
+    # Busca en la carpeta assets, si no está, busca en la raíz
     ruta = os.path.join("assets", nombre)
     if not os.path.exists(ruta):
         ruta = nombre
-    # Versión sin protección (dará error si falta la imagen, lo cual es bueno para depurar)
+    # Sin protección try/except para detectar errores de archivos faltantes
     img = pygame.image.load(ruta).convert_alpha()
     if escala:
         img = pygame.transform.scale(img, escala)
     return img
 
-img_fondo = cargar_imagen("cancha.jpg", (ANCHO, ALTO))
+# Intenta cargar png, si no jpg (por si acaso cambiaste la extensión)
+try:
+    img_fondo = cargar_imagen("cancha.png", (ANCHO, ALTO))
+except:
+    try:
+        img_fondo = cargar_imagen("cancha.jpg", (ANCHO, ALTO))
+    except:
+        print("Error: No se encontró cancha.png ni cancha.jpg")
+        img_fondo = pygame.Surface((ANCHO, ALTO))
+        img_fondo.fill((20, 20, 20))
 
 # --- Clases ---
 
@@ -110,14 +120,13 @@ class Paleta:
 
         # --- SISTEMA DE ULTI ---
         self.nombre = nombre_personaje
-        # Buscamos la config del personaje, si no existe usamos default
         self.config_ulti = ULTI_DATA.get(self.nombre, ULTI_DEFAULT)
         
         self.cooldown_max = self.config_ulti['cd']
         self.ultimo_uso_ulti = -self.cooldown_max # Para que empiece lista
         
-        self.ulti_activa_hasta = 0 # Para efectos con duración (Einstein/Steve)
-        self.velocidad_afectada = 1.0 # Para Einstein (Relatividad)
+        self.ulti_activa_hasta = 0 
+        self.velocidad_afectada = 1.0 
 
         # Muro de Steve
         self.muro_rect = None 
@@ -142,7 +151,6 @@ class Paleta:
     def activar_ulti_sistema(self):
         if self.puede_usar_ulti():
             self.ultimo_uso_ulti = pygame.time.get_ticks()
-            # Si la ulti tiene duración (Einstein/Steve), seteamos el tiempo fin
             if self.config_ulti['duracion'] > 0:
                 self.ulti_activa_hasta = pygame.time.get_ticks() + self.config_ulti['duracion']
             return True
@@ -186,11 +194,11 @@ class Paleta:
         if cambio_tamano:
             self.actualizar_imagen()
 
-        # 2. Resetear velocidad (por si Einstein nos afectó y ya pasó el tiempo)
+        # 2. Resetear velocidad (IMPORTANTE: Esto debe pasar antes de aplicar el freno de Einstein)
         self.velocidad_afectada = 1.0
 
     def mover(self, dx, dy):
-        # Aplicar factor de velocidad (Ulti de Einstein puede poner esto en 0.2)
+        # Aplicar factor de velocidad
         dx *= self.velocidad_afectada
         dy *= self.velocidad_afectada
 
@@ -213,7 +221,6 @@ class Paleta:
             if self.x + self.radio > ANCHO: self.x = ANCHO - self.radio
 
     def dibujar(self):
-        # Dibujar Paleta (Imagen o Círculo)
         if self.imagen_actual:
             rect_img = self.imagen_actual.get_rect(center=(int(self.x), int(self.y)))
             PANTALLA.blit(self.imagen_actual, rect_img)
@@ -226,17 +233,13 @@ class Paleta:
             pygame.draw.circle(PANTALLA, color, (int(self.x), int(self.y)), self.radio)
             pygame.draw.circle(PANTALLA, ROJO_OSCURO, (int(self.x), int(self.y)), int(self.radio * 0.8), 3)
 
-        # Dibujar Escudo de Item
         if self.tiene_escudo:
             pos_x_escudo = 30 if self.es_izquierda else ANCHO - 30
             pygame.draw.line(PANTALLA, CYAN, (pos_x_escudo, 0), (pos_x_escudo, ALTO), 5)
         
-        # Dibujar Muro de Steve (Si la ulti está activa)
         if self.config_ulti['tipo'] == 'BEDROCK' and pygame.time.get_ticks() < self.ulti_activa_hasta:
-            # Textura simple de ladrillos
-            pygame.draw.rect(PANTALLA, (100, 100, 100), self.muro_rect) # Gris base
-            pygame.draw.rect(PANTALLA, NEGRO, self.muro_rect, 2) # Borde
-            # Lineas ladrillos
+            pygame.draw.rect(PANTALLA, (100, 100, 100), self.muro_rect) 
+            pygame.draw.rect(PANTALLA, NEGRO, self.muro_rect, 2) 
             for y_linea in range(self.muro_rect.top, self.muro_rect.bottom, 20):
                 pygame.draw.line(PANTALLA, NEGRO, (self.muro_rect.left, y_linea), (self.muro_rect.right, y_linea))
 
@@ -247,23 +250,19 @@ class Paleta:
         
         ancho_barra = 80
         alto_barra = 8
-        
         x_barra = self.x - ancho_barra // 2
         y_barra = self.y + self.radio + 10
         
-        # Fondo barra
         pygame.draw.rect(PANTALLA, GRIS_OSCURO, (x_barra, y_barra, ancho_barra, alto_barra))
-        
-        # Relleno
         color_relleno = AMARILLO_ULTI if porcentaje >= 1.0 else (100, 100, 100)
         pygame.draw.rect(PANTALLA, color_relleno, (x_barra, y_barra, int(ancho_barra * porcentaje), alto_barra))
         pygame.draw.rect(PANTALLA, NEGRO, (x_barra, y_barra, ancho_barra, alto_barra), 1)
 
-        # Nombre Ulti si está lista
         if porcentaje >= 1.0:
             f = pygame.font.Font(None, 18)
-            t = f.render("ULTI LISTA!", True, AMARILLO_ULTI)
-            PANTALLA.blit(t, (x_barra + 5, y_barra + 10))
+            tecla_txt = "L-SHIFT" if self.es_izquierda else "R-SHIFT"
+            t = f.render(f"ULTI LISTA! [{tecla_txt}]", True, NEGRO)
+            PANTALLA.blit(t, (x_barra - 10, y_barra + 10))
 
 
 class Disco:
@@ -294,14 +293,12 @@ class Disco:
         self.x += self.vel_x
         self.y += self.vel_y
 
-        # Zigzag
         if pygame.time.get_ticks() < self.fin_zigzag:
             oscilacion = math.sin(pygame.time.get_ticks() * 0.08) * 15
             self.y += oscilacion
 
         rebotado = False
         
-        # Rebote Arriba/Abajo
         if self.y - self.radio <= 0:
             self.y = self.radio
             self.vel_y *= -1
@@ -311,27 +308,22 @@ class Disco:
             self.vel_y *= -1
             rebotado = True
 
-        # Goles
         zona_gol_top = ALTO // 2 - 110
         zona_gol_bot = ALTO // 2 + 110
         
-        # --- COLISIÓN CON MURO DE STEVE ---
-        # Solo si la ulti de Steve está activa
+        # Muro Steve P1
         rect_bola = pygame.Rect(self.x - self.radio, self.y - self.radio, self.radio*2, self.radio*2)
-        
-        # Chequeo Muro Izquierdo (P1)
         if paleta_izq.config_ulti['tipo'] == 'BEDROCK' and pygame.time.get_ticks() < paleta_izq.ulti_activa_hasta:
              if paleta_izq.muro_rect and rect_bola.colliderect(paleta_izq.muro_rect):
-                 self.vel_x = abs(self.vel_x) # Rebota hacia la derecha
+                 self.vel_x = abs(self.vel_x)
                  rebotado = True
-
-        # Chequeo Muro Derecho (P2)
+        
+        # Muro Steve P2
         if paleta_der.config_ulti['tipo'] == 'BEDROCK' and pygame.time.get_ticks() < paleta_der.ulti_activa_hasta:
              if paleta_der.muro_rect and rect_bola.colliderect(paleta_der.muro_rect):
-                 self.vel_x = -abs(self.vel_x) # Rebota hacia la izquierda
+                 self.vel_x = -abs(self.vel_x)
                  rebotado = True
 
-        # Escudos de Items (SHIELD)
         if paleta_izq.tiene_escudo and self.x - self.radio < 35 and self.vel_x < 0:
              self.x = 40
              self.vel_x *= -1
@@ -342,7 +334,6 @@ class Disco:
              self.vel_x *= -1
              rebotado = True
 
-        # Lógica de Goles
         if self.x - self.radio <= 0:
             if self.y < zona_gol_top or self.y > zona_gol_bot:
                 self.x = self.radio
@@ -459,11 +450,9 @@ def activar_poder_item(jugador_origen, jugador_destino, discos_juego, slot_index
                 discos_juego.append(nuevo_disco)
 
 def ejecutar_ulti_especial(p_origen, p_enemigo, discos):
-    """Aquí ocurre la magia de cada personaje"""
     tipo = p_origen.config_ulti['tipo']
     
     if tipo == 'FISION': # M. CURIE
-        # Generar 2 bolas extra
         for _ in range(2):
             d = Disco(p_origen.x, p_origen.y)
             d.vel_x = random.choice([-8, 8])
@@ -472,35 +461,28 @@ def ejecutar_ulti_especial(p_origen, p_enemigo, discos):
             discos.append(d)
             
     elif tipo == 'RELATIVIDAD': # EINSTEIN
-        # Afectar velocidad del enemigo (se maneja en p_enemigo.mover)
-        p_enemigo.velocidad_afectada = 0.2 # 80% más lento
+        p_enemigo.velocidad_afectada = 0.1 # 10% de velocidad (Casi congelado)
         
     elif tipo == 'IMAN': # GAUSS
-        # Disparar la bola principal al arco enemigo
-        bola = discos[0] # Tomamos la principal
+        bola = discos[0]
         target_x = ANCHO - 20 if p_origen.es_izquierda else 20
         target_y = ALTO // 2
-        
-        # Calcular vector
         dx = target_x - bola.x
         dy = target_y - bola.y
         angulo = math.atan2(dy, dx)
-        velocidad_sonica = 25 # Muy rápido
+        velocidad_sonica = 25
         bola.vel_x = math.cos(angulo) * velocidad_sonica
         bola.vel_y = math.sin(angulo) * velocidad_sonica
         
     elif tipo == 'TELEPORT': # TESLA
-        # Teletransportar la bola cerca del área enemiga
         bola = discos[0]
         zona_enemiga_x = ANCHO - 250 if p_origen.es_izquierda else 250
         bola.x = zona_enemiga_x
         bola.y = random.randint(100, ALTO - 100)
-        # Frenar un poco para que no sea gol automático injusto
         bola.vel_x = 2 if p_origen.es_izquierda else -2
         bola.vel_y = random.choice([-3, 3])
 
     elif tipo == 'BEDROCK': # STEVE
-        # Solo activamos la bandera (se dibuja y colisiona en Paleta y Disco)
         pass 
 
 # --- FUNCIÓN PRINCIPAL ---
@@ -508,7 +490,6 @@ def juego(datos_p1=None, datos_p2=None):
     reloj = pygame.time.Clock()
     corriendo = True
     
-    # Extraer datos. Si es None, usamos defaults
     img1 = datos_p1['imagen'] if datos_p1 else None
     nom1 = datos_p1['nombre'] if datos_p1 else 'JUGADOR 1'
     
@@ -528,6 +509,7 @@ def juego(datos_p1=None, datos_p2=None):
     while corriendo:
         tiempo_actual = pygame.time.get_ticks()
 
+        # 1. EVENTOS
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT: corriendo = False
             
@@ -540,17 +522,29 @@ def juego(datos_p1=None, datos_p2=None):
                 if evento.key == pygame.K_o: activar_poder_item(j2, j1, discos, 1)
                 if evento.key == pygame.K_p: activar_poder_item(j2, j1, discos, 2)
 
-                # --- ULTIMATES (SHIFT) ---
-                if evento.key == pygame.K_LSHIFT: # P1
+                # Ultimates
+                if evento.key == pygame.K_LSHIFT:
                     if j1.activar_ulti_sistema():
                         ejecutar_ulti_especial(j1, j2, discos)
                 
-                if evento.key == pygame.K_RSHIFT: # P2
+                if evento.key == pygame.K_RSHIFT:
                     if j2.activar_ulti_sistema():
                         ejecutar_ulti_especial(j2, j1, discos)
 
+        # 2. ACTUALIZAR ESTADOS Y EFECTOS (PRIMERO)
+        # Esto resetea velocidad a 1.0
+        j1.actualizar_efectos()
+        j2.actualizar_efectos()
 
-        # Movimiento Continuo
+        # 3. APLICAR ULTI DE EINSTEIN (SEGUNDO)
+        # Esto sobrescribe la velocidad si Einstein está activo
+        if j1.config_ulti['tipo'] == 'RELATIVIDAD' and tiempo_actual < j1.ulti_activa_hasta:
+            j2.velocidad_afectada = 0.1 # 10% Velocidad
+        if j2.config_ulti['tipo'] == 'RELATIVIDAD' and tiempo_actual < j2.ulti_activa_hasta:
+            j1.velocidad_afectada = 0.1
+
+        # 4. MOVIMIENTO (TERCERO)
+        # Ahora se mueven con la velocidad correcta
         teclas = pygame.key.get_pressed()
         v1 = VELOCIDAD_PALETA_BASE
         if teclas[pygame.K_w]: j1.mover(0, -v1)
@@ -564,29 +558,18 @@ def juego(datos_p1=None, datos_p2=None):
         if teclas[pygame.K_LEFT]: j2.mover(-v2, 0)
         if teclas[pygame.K_RIGHT]: j2.mover(v2, 0)
 
-        # Chequear efectos de duración (Einstein slow, Steve muro)
-        # Si Einstein activó ulti, j2 debe estar lento
-        if j1.config_ulti['tipo'] == 'RELATIVIDAD' and tiempo_actual < j1.ulti_activa_hasta:
-            j2.velocidad_afectada = 0.2
-        if j2.config_ulti['tipo'] == 'RELATIVIDAD' and tiempo_actual < j2.ulti_activa_hasta:
-            j1.velocidad_afectada = 0.2
-
-        j1.actualizar_efectos()
-        j2.actualizar_efectos()
-
-        # Spawner Items
+        # 5. LÓGICA DE JUEGO
         if tiempo_actual - ultimo_spawn > PROXIMO_SPAWN:
             items_suelo.append(PoderItem())
             ultimo_spawn = tiempo_actual
             PROXIMO_SPAWN = random.randint(5000, 10000)
         items_suelo = [p for p in items_suelo if tiempo_actual - p.tiempo_creacion < p.duracion_en_suelo]
 
-        # Recoger Items (Con restricción de repetidos)
         for item in items_suelo[:]:
             recogido = False
             # J1
             if math.hypot(item.x - j1.x, item.y - j1.y) < j1.radio + item.radio:
-                if item.tipo not in j1.inventario: # <--- Restricción de variedad
+                if item.tipo not in j1.inventario: 
                     for i in range(3):
                         if j1.inventario[i] is None:
                             j1.inventario[i] = item.tipo
@@ -595,14 +578,13 @@ def juego(datos_p1=None, datos_p2=None):
                             break 
             # J2
             if not recogido and math.hypot(item.x - j2.x, item.y - j2.y) < j2.radio + item.radio:
-                if item.tipo not in j2.inventario: # <--- Restricción de variedad
+                if item.tipo not in j2.inventario:
                     for i in range(3):
                         if j2.inventario[i] is None:
                             j2.inventario[i] = item.tipo
                             items_suelo.remove(item)
                             break
 
-        # Física Discos
         discos_a_borrar = []
         for d in discos:
             res = d.mover(j1, j2)
@@ -626,15 +608,14 @@ def juego(datos_p1=None, datos_p2=None):
         for d in discos_a_borrar:
             if d in discos: discos.remove(d)
 
-        # Dibujado
+        # 6. DIBUJADO
         dibujar_interfaz(j1, j2, puntaje1, puntaje2)
         for item in items_suelo: item.dibujar()
         
         j1.dibujar()
-        j1.dibujar_barra_ulti() # Nueva barra
-        
+        j1.dibujar_barra_ulti()
         j2.dibujar()
-        j2.dibujar_barra_ulti() # Nueva barra
+        j2.dibujar_barra_ulti()
         
         for d in discos: d.dibujar()
 
