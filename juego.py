@@ -40,6 +40,25 @@ PODERES_INFO = {
 }
 LISTA_PODERES = list(PODERES_INFO.keys())
 
+# --- SISTEMA DE BOLSA (VARIEDAD GARANTIZADA) ---
+BOLSA_PODERES = []
+
+def obtener_siguiente_poder():
+    """Saca un poder de la bolsa. Si está vacía, la rellena."""
+    global BOLSA_PODERES
+    
+    if not BOLSA_PODERES:
+        # Si la bolsa está vacía, la llenamos con una copia de todos los poderes
+        BOLSA_PODERES = list(PODERES_INFO.keys())
+        # print("--- Bolsa rellenada ---") # Debug
+
+    # Elegimos uno al azar de los que quedan en la bolsa
+    poder_elegido = random.choice(BOLSA_PODERES)
+    # Lo quitamos para que no vuelva a salir hasta que se vacíe la bolsa
+    BOLSA_PODERES.remove(poder_elegido)
+    
+    return poder_elegido
+
 # --- CONFIGURACIÓN DE ULTIMATES (PERSONAJES) ---
 # cd = Cooldown en milisegundos (ej: 25000 = 25 segundos)
 ULTI_DATA = {
@@ -83,7 +102,7 @@ except:
 
 class PoderItem:
     def __init__(self):
-        self.tipo = random.choice(LISTA_PODERES)
+        self.tipo = obtener_siguiente_poder()
         self.x = random.randint(100, ANCHO - 100)
         self.y = random.randint(50, ALTO - 50)
         self.radio = 15
