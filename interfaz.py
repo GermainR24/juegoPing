@@ -4,17 +4,17 @@ import os
 import juego
 import sonidos 
 
-# --- Inicialización ---
+# Inicialización 
 pygame.init()
 DJ = sonidos.GestorSonidos()
 
-# --- Configuración de Pantalla ---
+# Configuración de Pantalla 
 ANCHO = 1280
 ALTO = 720
 PANTALLA = pygame.display.set_mode((ANCHO, ALTO))
 pygame.display.set_caption("Selección de Equipo - Legends Hockey")
 
-# --- Colores y Fuentes ---
+# Colores y Fuentes 
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
 AZUL_UI = (50, 100, 150)
@@ -34,7 +34,7 @@ except:
     FUENTE_BOTON = pygame.font.Font(None, 40)
     FUENTE_UI = pygame.font.Font(None, 25)
 
-# --- Carga de Assets ---
+# Carga de Assets 
 def cargar_imagen(nombre, escala=None):
     ruta = os.path.join("assets", nombre)
     if not os.path.exists(ruta): ruta = nombre 
@@ -67,7 +67,7 @@ for p in datos_personajes:
 idx_p1 = 0 
 idx_p2 = 1 
 
-# --- Clases Modificadas (SIN SONIDO AUTOMÁTICO) ---
+# Clases Modificadas
 
 class Boton:
     def __init__(self, x, y, ancho, alto, texto, color_base, funcion=None):
@@ -89,8 +89,7 @@ class Boton:
     def click(self, evento):
         if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
             if self.rect.collidepoint(evento.pos):
-                # --- AQUÍ QUITAMOS EL SONIDO GLOBAL ---
-                # Solo ejecutamos la función asignada
+                # Quitamos el sonido del botón aquí
                 if self.funcion: self.funcion()
 
 class FlechaSelector:
@@ -107,13 +106,13 @@ class FlechaSelector:
         global idx_p1, idx_p2
         if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
             if self.rect.collidepoint(evento.pos):
-                # --- AQUÍ TAMBIÉN QUITAMOS EL SONIDO ---
+                # Ponemos el sonido del clic
                 if self.jugador_target == 1:
                     idx_p1 = (idx_p1 + self.direccion) % len(lista_personajes)
                 else:
                     idx_p2 = (idx_p2 + self.direccion) % len(lista_personajes)
 
-# --- Configuración Flechas ---
+# Configuración Flechas 
 pos_flecha_izq_p1 = (120, 200)
 pos_flecha_der_p1 = (380, 200)
 pos_flecha_izq_p2 = (ANCHO - 430, 200)
@@ -126,13 +125,13 @@ flechas = [
     FlechaSelector(pos_flecha_der_p2[0], pos_flecha_der_p2[1], img_flecha_der, 1, 2)
 ]
 
-# --- Funciones Loop ---
+# Funciones Loop 
 def salir_juego():
     pygame.quit()
     sys.exit()
 
 def iniciar_juego():
-    # --- AQUÍ PONEMOS EL SONIDO DEL BOTÓN START ---
+    # Ponemos el sonido del clic 
     DJ.play_sfx('click') 
     
     seleccion_p1 = lista_personajes[idx_p1] 
@@ -151,7 +150,7 @@ boton_play = Boton(ANCHO - 250, ALTO - 80, 200, 60, "JUGAR", VERDE_BOTON, inicia
 
 reloj = pygame.time.Clock()
 
-# --- Funciones de Dibujado (Iguales) ---
+# Funciones de Dibujado (Iguales) 
 def dibujar_info_seleccion(x_centro, y, indice):
     personaje = lista_personajes[indice]
     texto = FUENTE_NOMBRE.render(personaje["nombre"], True, BLANCO)
@@ -181,7 +180,7 @@ def dibujar_panel_controles():
     PANTALLA.blit(txt_p2, (rect_panel.x + 320, rect_panel.y + 80))
     pygame.draw.line(PANTALLA, GRIS_OSCURO, (ANCHO//2, ALTO - 140), (ANCHO//2, ALTO - 40), 2)
 
-# --- Loop Principal ---
+# Loop Principal 
 DJ.play_musica('musica_menu')
 
 while True:
@@ -194,9 +193,6 @@ while True:
             elif evento.key == pygame.K_d: idx_p1 = (idx_p1 + 1) % len(lista_personajes)
             if evento.key == pygame.K_LEFT: idx_p2 = (idx_p2 - 1) % len(lista_personajes)
             elif evento.key == pygame.K_RIGHT: idx_p2 = (idx_p2 + 1) % len(lista_personajes)
-            
-            # (Opcional: Si quieres sonido al cambiar con teclado, déjalo aquí. Si no, borra estas 2 líneas)
-            # DJ.play_sfx('click') 
 
         boton_back.click(evento)
         boton_play.click(evento)

@@ -2,13 +2,13 @@ import pygame
 import math
 import random
 import os
-import sonidos # <--- NUEVO IMPORT
+import sonidos
 
-# --- Inicialización ---
+# Inicialización 
 pygame.init()
 DJ = sonidos.GestorSonidos() # Instancia local para el juego
 
-# --- Constantes ---
+# Constantes 
 ANCHO = 1280
 ALTO = 720
 PANTALLA = pygame.display.set_mode((ANCHO, ALTO))
@@ -97,7 +97,7 @@ NOMBRES_ARCHIVOS = {
 for tipo, archivo in NOMBRES_ARCHIVOS.items():
     IMGS_PODERES[tipo] = cargar_imagen(archivo, (50, 50))
 
-# --- Clases ---
+# Clases 
 class PoderItem:
     def __init__(self):
         self.tipo = obtener_siguiente_poder()
@@ -304,7 +304,7 @@ class Disco:
         self.vel_y *= FRICCION
         
         if rebotado:
-            DJ.play_sfx('rebote') # <--- SONIDO REBOTE
+            DJ.play_sfx('rebote') # <--- Sonido rebote
             if self.fantasma_rebotes > 0: self.fantasma_rebotes -= 1
         
         if self.es_extra and (pygame.time.get_ticks() - self.tiempo_creacion > 8000):
@@ -327,7 +327,7 @@ def chequear_colision_disco(paleta, disco):
     dy = disco.y - paleta.y
     distancia = math.hypot(dx, dy)
     if distancia < paleta.radio + disco.radio:
-        DJ.play_sfx('rebote') # <--- SONIDO GOLPE PALETA
+        DJ.play_sfx('rebote') # <--- Sonido rebote paleta
         angulo = math.atan2(dy, dx)
         fuerza = 12 
         disco.vel_x = math.cos(angulo) * fuerza
@@ -376,7 +376,7 @@ def dibujar_interfaz(p1, p2, score1, score2):
 def activar_poder_item(jugador_origen, jugador_destino, discos_juego, slot_index):
     tipo_poder = jugador_origen.inventario[slot_index]
     if tipo_poder is not None:
-        DJ.play_sfx('item') # <--- SONIDO ACTIVAR ITEM
+        DJ.play_sfx('item') # <--- Sonido activar item
         jugador_origen.inventario[slot_index] = None
         info = PODERES_INFO[tipo_poder]
         if info['target'] == 'self': jugador_origen.aplicar_efecto(tipo_poder, info['duracion'])
@@ -414,7 +414,7 @@ def ejecutar_ulti_especial(p_origen, p_enemigo, discos):
         bola.vel_x = 2 if p_origen.es_izquierda else -2
 
 def juego(datos_p1=None, datos_p2=None):
-    DJ.play_musica('musica_juego') # <--- MUSICA DE BATALLA
+    DJ.play_musica('musica_juego') # <--- Musica de fondo juego
 
     img1 = datos_p1['imagen'] if datos_p1 else None
     nom1 = datos_p1['nombre'] if datos_p1 else 'JUGADOR 1'
@@ -490,18 +490,18 @@ def juego(datos_p1=None, datos_p2=None):
                     for i in range(3):
                         if j2.inventario[i] is None:
                             j2.inventario[i] = item.tipo; items_suelo.remove(item); recogido = True; break
-            if recogido: DJ.play_sfx('item') # <--- SONIDO RECOGER
+            if recogido: DJ.play_sfx('item') # <--- sonido recoger item
 
         discos_a_borrar = []
         for d in discos:
             res = d.mover(j1, j2)
             if res == "GOL_IZQUIERDA":
-                DJ.play_sfx('gol') # <--- SONIDO GOL
+                DJ.play_sfx('gol') # <--- sonido gol
                 if not d.es_extra: puntaje1 += 1; d.x, d.y = ANCHO//2, ALTO//2; d.vel_x, d.vel_y = 0, 0
                 else: discos_a_borrar.append(d)
                 pygame.time.delay(500)
             elif res == "GOL_DERECHA":
-                DJ.play_sfx('gol') # <--- SONIDO GOL
+                DJ.play_sfx('gol') # <--- sonido gol
                 if not d.es_extra: puntaje2 += 1; d.x, d.y = ANCHO//2, ALTO//2; d.vel_x, d.vel_y = 0, 0
                 else: discos_a_borrar.append(d)
                 pygame.time.delay(500)
