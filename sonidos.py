@@ -3,64 +3,66 @@ import os
 
 class GestorSonidos:
     def __init__(self):
-        # Inicializar mixer si no está inicializado
         if not pygame.mixer.get_init():
             pygame.mixer.init()
             
         self.sonidos = {}
         
-        # Diccionario: 'nombre_codigo': 'nombre_archivo.wav/mp3'
-        # Puedes añadir tus propios archivos aquí
         self.lista_archivos = {
-            'rebote': 'hit.wav',       # Golpe pared/paleta
-            'gol': 'goal.wav',         # Gol
-            'item': 'powerup.wav',     # Recoger item
-            'ulti': 'ulti.wav',        # Activar poder especial
-            'click': 'click.wav',      # Click en menú
-            'musica_menu': 'menu.mp3', # Música de fondo menú
-            'musica_juego': 'game.mp3' # Música de fondo juego
+            # --- Generales ---
+            'rebote': 'hit.wav',
+            'gol': 'goal.wav',
+            'item': 'powerup.wav',
+            'click': 'click.wav',
+            'musica_menu': 'menu.mp3',
+            'musica_juego': 'game.mp3',
+            
+            # --- Ulti Genérico (Fallback) ---
+            'ulti_default': 'ulti.wav', 
+
+            # --- Ultis Específicas (NUEVO) ---
+            'ulti_curie': 'ulti_curie.wav',     # Sonido nuclear/radiación
+            'ulti_einstein': 'ulti_einstein.wav', # Sonido de reloj/tiempo
+            'ulti_gauss': 'ulti_gauss.wav',     # Sonido magnético/eléctrico
+            'ulti_steve': 'ulti_steve.wav',     # Sonido de poner bloques (Minecraft)
+            'ulti_tesla': 'ulti_tesla.wav'      # Sonido de rayo/teleport
         }
         
         self.cargar_sfx()
 
     def cargar_sfx(self):
-        # Intentar cargar los efectos de sonido
+        # (Este método queda igual, cargará automáticamente las nuevas entradas)
         for nombre, archivo in self.lista_archivos.items():
             ruta = os.path.join("assets", "sounds", archivo)
-            # Si no está en subcarpeta, buscar en raíz
             if not os.path.exists(ruta):
                 ruta = archivo
             
-            # Solo cargamos si existe y NO es música (mp3 usualmente para música)
             if os.path.exists(ruta) and not archivo.endswith('.mp3'):
                 try:
                     sfx = pygame.mixer.Sound(ruta)
-                    sfx.set_volume(0.4) # Volumen efectos
+                    sfx.set_volume(0.4)
                     self.sonidos[nombre] = sfx
                 except:
-                    pass # Si falla, seguimos sin ese sonido
+                    pass 
 
     def play_sfx(self, nombre):
-        """ Reproduce un efecto corto """
         if nombre in self.sonidos:
             self.sonidos[nombre].play()
+        # Fallback: Si intentas tocar una ulti específica que no existe, toca la default
+        elif nombre.startswith('ulti_') and 'ulti_default' in self.sonidos:
+             self.sonidos['ulti_default'].play()
 
     def play_musica(self, nombre):
-        """ Carga y reproduce música en loop """
         nombre_archivo = self.lista_archivos.get(nombre)
         if not nombre_archivo: return
-
         ruta = os.path.join("assets", "sounds", nombre_archivo)
-        if not os.path.exists(ruta):
-            ruta = nombre_archivo
-        
+        if not os.path.exists(ruta): ruta = nombre_archivo
         if os.path.exists(ruta):
             try:
                 pygame.mixer.music.load(ruta)
-                pygame.mixer.music.set_volume(0.3) # Volumen música más bajo
-                pygame.mixer.music.play(-1) # -1 = Loop infinito
-            except:
-                print(f"No se pudo cargar música: {ruta}")
+                pygame.mixer.music.set_volume(0.3)
+                pygame.mixer.music.play(-1)
+            except: pass
 
     def stop_musica(self):
         pygame.mixer.music.stop()

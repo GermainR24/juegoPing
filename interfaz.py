@@ -2,11 +2,11 @@ import pygame
 import sys
 import os
 import juego
-import sonidos  # <--- NUEVO IMPORT
+import sonidos 
 
 # --- Inicialización ---
 pygame.init()
-DJ = sonidos.GestorSonidos() # <--- INICIAR SISTEMA DE SONIDO
+DJ = sonidos.GestorSonidos()
 
 # --- Configuración de Pantalla ---
 ANCHO = 1280
@@ -14,7 +14,7 @@ ALTO = 720
 PANTALLA = pygame.display.set_mode((ANCHO, ALTO))
 pygame.display.set_caption("Selección de Equipo - Legends Hockey")
 
-# --- Colores ---
+# --- Colores y Fuentes ---
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
 AZUL_UI = (50, 100, 150)
@@ -23,7 +23,6 @@ AZUL_BOTON = (70, 130, 180)
 AMARILLO_TEXTO = (255, 215, 0)
 GRIS_OSCURO = (50, 50, 50)
 
-# --- Fuentes ---
 try:
     FUENTE_TITULO = pygame.font.SysFont("impact", 80)
     FUENTE_NOMBRE = pygame.font.SysFont("impact", 40)
@@ -35,31 +34,23 @@ except:
     FUENTE_BOTON = pygame.font.Font(None, 40)
     FUENTE_UI = pygame.font.Font(None, 25)
 
-# --- Función para Cargar Imágenes ---
+# --- Carga de Assets ---
 def cargar_imagen(nombre, escala=None):
     ruta = os.path.join("assets", nombre)
+    if not os.path.exists(ruta): ruta = nombre 
     if not os.path.exists(ruta):
-        ruta = nombre 
-    
-    # Creamos una superficie de color si falla la imagen (prevención de errores)
-    if not os.path.exists(ruta):
-        surf = pygame.Surface((50, 50))
-        surf.fill((100, 100, 100))
+        surf = pygame.Surface((50, 50)); surf.fill((100, 100, 100))
         if escala: surf = pygame.transform.scale(surf, escala)
         return surf
-
     img = pygame.image.load(ruta).convert_alpha()
-    if escala:
-        img = pygame.transform.scale(img, escala)
+    if escala: img = pygame.transform.scale(img, escala)
     return img
 
-# --- Cargar Assets ---
 img_fondo = cargar_imagen("cancha.jpg", (ANCHO, ALTO))
 img_vs = cargar_imagen("vs_logo.png", (150, 150))
 img_flecha_izq = cargar_imagen("flecha_izq.png", (50, 50))
 img_flecha_der = cargar_imagen("flecha_der.png", (50, 50))
 
-# Datos de los Personajes
 datos_personajes = [
     {"archivo": "curie.png", "nombre": "M. CURIE"},
     {"archivo": "einstein.png", "nombre": "EINSTEIN"},
@@ -73,11 +64,11 @@ for p in datos_personajes:
     img = cargar_imagen(p["archivo"], (250, 300))
     lista_personajes.append({"nombre": p["nombre"], "imagen": img})
 
-# --- Variables Globales de Selección ---
 idx_p1 = 0 
 idx_p2 = 1 
 
-# --- Clases ---
+# --- Clases Modificadas (SIN SONIDO AUTOMÁTICO) ---
+
 class Boton:
     def __init__(self, x, y, ancho, alto, texto, color_base, funcion=None):
         self.rect = pygame.Rect(x, y, ancho, alto)
@@ -98,7 +89,8 @@ class Boton:
     def click(self, evento):
         if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
             if self.rect.collidepoint(evento.pos):
-                DJ.play_sfx('click') # <--- SONIDO CLICK
+                # --- AQUÍ QUITAMOS EL SONIDO GLOBAL ---
+                # Solo ejecutamos la función asignada
                 if self.funcion: self.funcion()
 
 class FlechaSelector:
@@ -115,7 +107,7 @@ class FlechaSelector:
         global idx_p1, idx_p2
         if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
             if self.rect.collidepoint(evento.pos):
-                DJ.play_sfx('click') # <--- SONIDO CLICK
+                # --- AQUÍ TAMBIÉN QUITAMOS EL SONIDO ---
                 if self.jugador_target == 1:
                     idx_p1 = (idx_p1 + self.direccion) % len(lista_personajes)
                 else:
@@ -140,25 +132,26 @@ def salir_juego():
     sys.exit()
 
 def iniciar_juego():
+    # --- AQUÍ PONEMOS EL SONIDO DEL BOTÓN START ---
+    DJ.play_sfx('click') 
+    
     seleccion_p1 = lista_personajes[idx_p1] 
     seleccion_p2 = lista_personajes[idx_p2]
     
-    # Detener música menú
     DJ.stop_musica()
-    
-    # Ir al juego
     juego.juego(seleccion_p1, seleccion_p2)
 
-    # Al volver, restaurar ventana y música
     pygame.display.set_mode((ANCHO, ALTO))
     pygame.display.set_caption("Selección de Equipo - Legends Hockey")
     DJ.play_musica('musica_menu')
 
+# Crear los botones
 boton_back = Boton(50, ALTO - 80, 200, 60, "SALIR", AZUL_BOTON, salir_juego)
 boton_play = Boton(ANCHO - 250, ALTO - 80, 200, 60, "JUGAR", VERDE_BOTON, iniciar_juego)
 
 reloj = pygame.time.Clock()
 
+# --- Funciones de Dibujado (Iguales) ---
 def dibujar_info_seleccion(x_centro, y, indice):
     personaje = lista_personajes[indice]
     texto = FUENTE_NOMBRE.render(personaje["nombre"], True, BLANCO)
@@ -173,9 +166,7 @@ def dibujar_info_seleccion(x_centro, y, indice):
 
 def dibujar_panel_controles():
     rect_panel = pygame.Rect(ANCHO//2 - 250, ALTO - 180, 500, 150)
-    s = pygame.Surface((500, 150))
-    s.set_alpha(220) 
-    s.fill((20, 30, 40))
+    s = pygame.Surface((500, 150)); s.set_alpha(220); s.fill((20, 30, 40))
     PANTALLA.blit(s, rect_panel)
     pygame.draw.rect(PANTALLA, AZUL_UI, rect_panel, 3) 
     titulo = FUENTE_UI.render("- CONTROLES -", True, AMARILLO_TEXTO)
@@ -191,7 +182,7 @@ def dibujar_panel_controles():
     pygame.draw.line(PANTALLA, GRIS_OSCURO, (ANCHO//2, ALTO - 140), (ANCHO//2, ALTO - 40), 2)
 
 # --- Loop Principal ---
-DJ.play_musica('musica_menu') # Iniciar música al arrancar
+DJ.play_musica('musica_menu')
 
 while True:
     for evento in pygame.event.get():
@@ -199,15 +190,13 @@ while True:
             salir_juego()
         
         if evento.type == pygame.KEYDOWN:
-            old_p1, old_p2 = idx_p1, idx_p2
             if evento.key == pygame.K_a: idx_p1 = (idx_p1 - 1) % len(lista_personajes)
             elif evento.key == pygame.K_d: idx_p1 = (idx_p1 + 1) % len(lista_personajes)
             if evento.key == pygame.K_LEFT: idx_p2 = (idx_p2 - 1) % len(lista_personajes)
             elif evento.key == pygame.K_RIGHT: idx_p2 = (idx_p2 + 1) % len(lista_personajes)
             
-            # Sonido si hubo cambio
-            if old_p1 != idx_p1 or old_p2 != idx_p2:
-                DJ.play_sfx('click')
+            # (Opcional: Si quieres sonido al cambiar con teclado, déjalo aquí. Si no, borra estas 2 líneas)
+            # DJ.play_sfx('click') 
 
         boton_back.click(evento)
         boton_play.click(evento)

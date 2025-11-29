@@ -26,6 +26,7 @@ VERDE = (50, 200, 50)
 MORADO = (150, 50, 150)
 CYAN = (0, 255, 255)
 
+
 # Configuración de Items
 PODERES_INFO = {
     'BIG':   {'color': VERDE,  'duracion': 15000, 'target': 'self'},
@@ -57,6 +58,15 @@ ULTI_DATA = {
     'TESLA':    {'cd': 20000, 'duracion': 0,    'tipo': 'TELEPORT'},     
 }
 ULTI_DEFAULT = {'cd': 20000, 'duracion': 0, 'tipo': 'NONE'}
+
+# Mapeo de Nombres de Personaje -> Clave de sonido en sonidos.py
+SONIDOS_ULTI_MAP = {
+    'M. CURIE': 'ulti_curie',
+    'EINSTEIN': 'ulti_einstein',
+    'GAUSS':    'ulti_gauss',
+    'STEVE':    'ulti_steve',
+    'TESLA':    'ulti_tesla'
+}
 
 FRICCION = 0.995
 VELOCIDAD_PALETA_BASE = 9
@@ -435,11 +445,13 @@ def juego(datos_p1=None, datos_p2=None):
                 if evento.key == pygame.K_p: activar_poder_item(j2, j1, discos, 2)
                 if evento.key == pygame.K_LSHIFT:
                     if j1.activar_ulti_sistema():
-                        DJ.play_sfx('ulti') # <--- SONIDO ULTI
+                        sonido_key = SONIDOS_ULTI_MAP.get(j1.nombre, 'ulti_default')
+                        DJ.play_sfx(sonido_key)
                         ejecutar_ulti_especial(j1, j2, discos)
                 if evento.key == pygame.K_RSHIFT:
                     if j2.activar_ulti_sistema():
-                        DJ.play_sfx('ulti') # <--- SONIDO ULTI
+                        sonido_key = SONIDOS_ULTI_MAP.get(j2.nombre, 'ulti_default')
+                        DJ.play_sfx(sonido_key)
                         ejecutar_ulti_especial(j2, j1, discos)
 
         j1.actualizar_efectos(); j2.actualizar_efectos()
